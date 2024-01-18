@@ -1,8 +1,21 @@
 # LegalEval Subtask A
 
 
+### Input Data Format
+The top level structure of each JSON file is a list, where each entry represents a judgement-labels data point. Each data point is a dict with the following keys:
 
-## Getting started
+- `id`: a unique id for this data point. This is useful for evaluation.
+- `annotations`:list of dict.The items in the dict are:
+    - `result` a list of dictionaries containing sentence text and corresponding labels pair.The keys are:
+    - `id`:unique id of each sentence
+    - `value`:a dictionary with the following keys:
+        - `start`:integer.starting index of the text
+        - `end`:integer.end index of the text
+        - `text`:string.The actual text of the sentence
+        - `labels`:list.the labels that correspond to the text
+- `data`: the actual text of the judgement.
+- `meta`: a string.It tells about the category of the case(Criminal,Tax etc.)
+<!-- ## Getting started
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
@@ -90,4 +103,4 @@ Show your appreciation to those who have contributed to the project.
 For open source projects, say how it is licensed.
 
 ## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers. -->
