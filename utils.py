@@ -1,8 +1,9 @@
+import torch
 from torch import TensorType
 from sklearn.preprocessing import LabelBinarizer
 from transformers import BertTokenizer, BertModel
 
-def label_encode(target_variables : list):
+def label_encode(target_variables : list) -> LabelBinarizer:
     """
     Encode target variables using one-hot encoding.
     
@@ -33,6 +34,7 @@ def sent2embeddings(sentence: str, MAX_LEN = None) -> TensorType:
     model = BertModel.from_pretrained('bert-base-uncased')
     
     inputs = sent2tensors(sentence,MAX_LEN)
-    emb = model(**inputs).last_hidden_state
+    with torch.no_grad():
+        emb = model(**inputs).last_hidden_state
     
     return emb

@@ -6,7 +6,7 @@ import torch.nn as nn
 class CNN_BiLSTM(nn.Module):
     def __init__(self,
                 word_input_channels:int = 1,
-                word_output_channels:int = 1, 
+                word_output_channels:int = 1,
                 word_kernel_size:Tuple[int,int] = (5,1),
                 sent_input_channels:int = 3,
                 sent_output_channels:int = 1,
@@ -21,7 +21,7 @@ class CNN_BiLSTM(nn.Module):
                                    out_channels = word_output_channels,
                                    kernel_size = word_kernel_size)
         self.word_max_pool = nn.MaxPool2d(kernel_size = (2,1))
-        # Sentence Level CNN
+        # Sentence Level 
         self.sent_conv = nn.Conv2d(in_channels = sent_input_channels,
                                    out_channels = sent_output_channels,
                                    kernel_size = (1,1))
@@ -46,11 +46,9 @@ class CNN_BiLSTM(nn.Module):
         # Takes sentence word-level embeddings of 3 sentences
         # passes each sentence through the word level CNN 
         # concats the output to form a 3,38,768 tensor
-        ind_x = x.unbind(0) 
+        ind_x = x.unbind(0)
         for int_x in ind_x:
             int_x = int_x.unsqueeze(0)
-            print(int_x.size())
-            # int_x = int_x.view(int_x.size(0),int_x.size(1), -1)
             int_x = self.word_conv(int_x)
             int_x = self.relu(int_x)
             int_x = self.word_max_pool(int_x)
