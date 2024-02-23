@@ -19,6 +19,7 @@ class CNN_BiLSTM(nn.Module):
                 hidden_size:int = 256,
                 num_layers:int = 2,
                 output_size:int = 13,
+                dropout:float = 0.1
                 ) -> None:
         super(CNN_BiLSTM,self).__init__()
         # Word Level CNN
@@ -28,7 +29,7 @@ class CNN_BiLSTM(nn.Module):
                                                 padding='same'),
                                        nn.ReLU(),
                                        nn.MaxPool2d(kernel_size = (2,1)),
-                                       nn.Dropout(p=0.2)
+                                       nn.Dropout(p=dropout)
         )
         # Sentence Level    
         self.sent_conv = nn.Conv2d(in_channels = sent_input_channels,
@@ -44,14 +45,14 @@ class CNN_BiLSTM(nn.Module):
                               batch_first=True,bidirectional=True)
         
         self.dense = nn.Sequential(nn.Linear(hidden_size*2, 128),
-                                   nn.Dropout(p=0.2),
+                                   nn.Dropout(p=dropout),
                                    nn.Linear(128, output_size),
                                    nn.Softmax(dim=1),
         )
         
         self.apply(init_weights) #pytorch weight initialization is poor by default
         
-    def forward(self, x, hidden, cell):
+    def forward(self, x):
         sent_ten = torch.Tensor()
         # Passing through the word level CNN
         # Takes sentence word-level embeddings of 3 sentences
@@ -68,7 +69,11 @@ class CNN_BiLSTM(nn.Module):
         x = self.sent_conv(sent_ten)
         
         # Forward pass through LSTM layer
-        out, (hidden,cell) = self.bilstm(x, (hidden, cell))
+        for i in range(x.size(-2)):
+            if i == 0:
+                out, (hidden,cell) = self.bilstm(x[:,i,:].unsqueeze(1))
+            else:
+                out, (hidden,cell) = self.bilstm(x[:,i,:].unsqueeze(1),(hidden,cell))
 
         # Take the output from the last time step
         out = out[:, -1, :]
@@ -76,7 +81,7 @@ class CNN_BiLSTM(nn.Module):
         # Fully connected layers
         out = self.dense(out)
 
-        return out, (hidden,cell)
+        return out
 
     def init_hidden(self, batch_size=1):
         """
