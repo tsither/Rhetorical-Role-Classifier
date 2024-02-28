@@ -73,7 +73,7 @@ class Dataset_Reader(Dataset):
                     self.labels.append(labels)
 
     def __len__(self):
-        return len(self.data)
+        return len(self.texts)
 
     def __getitem__(self, idx):
         text = self.texts[idx]
