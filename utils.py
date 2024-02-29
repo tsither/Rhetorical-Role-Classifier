@@ -67,17 +67,17 @@ class Dataset_Reader(Dataset):
             for annotation in document['annotations']:
                 for sentence in annotation['result']:
                     text = sentence['value']['text'].lower().replace('\n', '')
-                    labels = sentence['value']['labels'][0]
+                    label = sentence['value']['labels'][0]
 
-                    self.texts.append([idx, labels, text])
-                    self.labels.append(labels)
+                    self.texts.append([idx, label, text])
+                    self.labels.append(label)
 
     def __len__(self):
-        return len(self.texts)
+        return len(self.data)
 
     def __getitem__(self, idx):
-        text = self.texts[idx]
-        label = self.labels[idx]
+        text = [entry[-1] for entry in self.texts if entry[0] == idx]
+        label = [entry[-2] for entry in self.texts if entry[0] == idx]
 
         return {
             'text': text,
