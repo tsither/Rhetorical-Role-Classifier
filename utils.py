@@ -1,11 +1,66 @@
 """Module containing utils functions and classes"""
 
+import os, sys
 from typing import Tuple
 import torch
 import numpy as np
 from torch.utils.data import Dataset
 from sklearn.preprocessing import LabelEncoder
 from transformers import BertTokenizer, BertModel
+from collections import defaultdict
+
+def save_model(model, filepath):
+    """
+    Save PyTorch model parameters to a file.
+
+    Args:
+    - model (torch.nn.Module): PyTorch model to save.
+    - filepath (str): Filepath to save the model parameters.
+    """
+    torch.save(model.state_dict(), filepath)
+    print(f"Model parameters saved to '{filepath}'")
+
+def load_model(model, filepath):
+    """
+    Load PyTorch model parameters from a file.
+
+    Args:
+    - model (torch.nn.Module): PyTorch model to load parameters into.
+    - filepath (str): Filepath to the saved model parameters.
+    """
+    model.load_state_dict(torch.load(filepath))
+    print(f"Model parameters loaded from '{filepath}'")
+    
+def save_tensor(tensor, dir, filename):
+    """
+    Save PyTorch tensor to a file.
+
+    Args:
+    - tensor (torch.Tensor): PyTorch tensor to save.
+    - dir (str): Directory to save the tensor.
+    - filename (str): Filename to save the tensor.
+    """
+    
+    if not os.path.exists(os.path.join(dir)):
+        os.makedirs(os.path.join(dir))
+        
+    filepath = os.path.join(dir, filename)
+    torch.save(tensor, filepath)
+    # print(f"Tensor saved to '{filepath}'")
+
+def load_tensor(filepath):
+    """
+    Load PyTorch tensor from a file.
+
+    Args:
+    - filepath (str): Filepath to the saved tensor.
+
+    Returns:
+    - tensor (torch.Tensor): Loaded PyTorch tensor.
+    """
+    tensor = torch.load(filepath)
+    # print(f"Tensor loaded from '{filepath}'")
+    return tensor
 
 def label_encode(target_variables : list) -> LabelEncoder:
     """
@@ -19,7 +74,28 @@ def label_encode(target_variables : list) -> LabelEncoder:
     """
     le = LabelEncoder()
     le = le.fit(target_variables)
+    
     return le
+
+def max_length(documents, tokenizer):
+    """
+    Generate the maximum length of each sentence in each document. This is necessary to make sure there is a fixed sentence-length 
+    for each document before we pass the sentence embeddings through the model.
+
+    Returns: {document index: length of longest sentence}
+
+    """
+    max_length_dict = {}
+    for index, sentences in documents.dict.items():
+        sizes = []
+
+        for sentence in sentences:
+            inputs = tokenizer(sentence, return_tensors="pt", truncation=True, padding=True)
+            sizes.append(inputs['input_ids'].size(1))
+
+        max_length_dict[index] = max(sizes)
+
+    return max_length_dict
 
 def get_model_data(data:torch.utils.data.Dataset, encoder: LabelEncoder,
                    tokenizer= BertTokenizer.from_pretrained('bert-base-uncased'),
@@ -58,19 +134,22 @@ def get_model_data(data:torch.utils.data.Dataset, encoder: LabelEncoder,
 class Dataset_Reader(Dataset):
     def __init__(self, data):
         self.data = data
-
         self.texts = []
         self.labels = []
+
         for idx, document in enumerate(data):
-            current_id = document['id']
-            # current_meta = document['meta']['group']
             for annotation in document['annotations']:
                 for sentence in annotation['result']:
                     text = sentence['value']['text'].lower().replace('\n', '')
-                    label = sentence['value']['labels'][0]
+                    labels = sentence['value']['labels'][0]
 
-                    self.texts.append([idx, label, text])
-                    self.labels.append(label)
+                    self.texts.append([idx, labels, text])
+                    self.labels.append(labels)
+
+        self.dict = defaultdict(list)
+        for item in self.texts:
+            key = item[0]
+            self.dict[key].extend(item[2:])
 
     def __len__(self):
         return len(self.data)
