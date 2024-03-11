@@ -7,6 +7,59 @@ from torch.utils.data import Dataset
 from sklearn.preprocessing import LabelEncoder
 from transformers import BertTokenizer, BertModel
 
+def save_model(model, filepath):
+    """
+    Save PyTorch model parameters to a file.
+
+    Args:
+    - model (torch.nn.Module): PyTorch model to save.
+    - filepath (str): Filepath to save the model parameters.
+    """
+    torch.save(model.state_dict(), filepath)
+    print(f"Model parameters saved to '{filepath}'")
+
+def load_model(model, filepath):
+    """
+    Load PyTorch model parameters from a file.
+
+    Args:
+    - model (torch.nn.Module): PyTorch model to load parameters into.
+    - filepath (str): Filepath to the saved model parameters.
+    """
+    model.load_state_dict(torch.load(filepath))
+    print(f"Model parameters loaded from '{filepath}'")
+    
+def save_tensor(tensor, dir, filename):
+    """
+    Save PyTorch tensor to a file.
+
+    Args:
+    - tensor (torch.Tensor): PyTorch tensor to save.
+    - dir (str): Directory to save the tensor.
+    - filename (str): Filename to save the tensor.
+    """
+    
+    if not os.path.exists(os.path.join(dir)):
+        os.makedirs(os.path.join(dir))
+        
+    filepath = os.path.join(dir, filename)
+    torch.save(tensor, filepath)
+    print(f"Tensor saved to '{filepath}'")
+
+def load_tensor(filepath):
+    """
+    Load PyTorch tensor from a file.
+
+    Args:
+    - filepath (str): Filepath to the saved tensor.
+
+    Returns:
+    - tensor (torch.Tensor): Loaded PyTorch tensor.
+    """
+    tensor = torch.load(filepath)
+    # print(f"Tensor loaded from '{filepath}'")
+    return tensor
+
 def label_encode(target_variables : list) -> LabelEncoder:
     """
     Encode target variables.
