@@ -1,4 +1,5 @@
 import argparse
+import subprocess
 import time
 
 from models import CNN_BiLSTM, BiLSTM
@@ -18,19 +19,20 @@ from helper import grid_search_train_test, default_train_test
 
 ###########################################################################
 
+TRAIN_DATA_PATH = 'data/train.json'
+TEST_DATA_PATH = 'data/dev.json'
 
 def main():
     parser = argparse.ArgumentParser(
-        description= "Train neural network for sequential sentence classification"
+        description= "Train neural network for sequential sentence classification, generate word embeddings from scratch, or do both."
     )
 
     parser.add_argument(
-        '--train', dest='train',
+        '--default_train', dest='default_train',
         help='Turn on this flag when you are ready to train the model',
         action='store_true'
     )
 
-    
     parser.add_argument(
         '--grid_search', dest='grid_search',
         help='Train using grid search across multiple parameters',
@@ -49,13 +51,28 @@ def main():
         action='store_true'
     )
 
+    parser.add_argument(
+    '--generate_emb', dest='generate_emb',
+    help='Use this file to generate word embeddings from scratch (takes a long time)',
+    action='store_true'
+    )
+
     args = parser.parse_args()
+
+    if args.generate_emb:
+        subprocess.run(['python', 'emb_generation.py'])
+
 
     if args.cnn_bilstm:
         model = CNN_BiLSTM()
 
-    else:
+    elif args.bilstm:
         model = BiLSTM()
+
+    else:
+        print("No model chosen")
+
+
 
 
     #For default training:
@@ -88,7 +105,7 @@ def main():
         max_accuracy_config = max(result, key=get_accuracy_value)
 
         print(max_accuracy_config)
-    else:
+    elif args.default_train:
         result = default_train_test(
             parameters=parameters,
             model=model,
@@ -100,6 +117,9 @@ def main():
         max_accuracy_config = max(result, key=get_accuracy_value)
 
         print(max_accuracy_config)
+
+    else:
+        print("No model trained")
 
 
 
