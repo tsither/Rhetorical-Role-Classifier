@@ -3,7 +3,7 @@ from Dataset_Reader import Dataset_Reader
 from utils import read_json, get_model_data_batched, save_tensor, label_encode, get_batched_data
 from utils import document_max_length, write_dictionary_to_json
 
-from main import TRAIN_DATA_PATH, TEST_DATA_PATH
+from main import TRAIN_DATA_PATH, TEST_DATA_PATH, remove_special_characters
 
 
 ##################################################################################
@@ -17,8 +17,8 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 emb_model = BertModel.from_pretrained('bert-base-uncased')
 
 #retrieve data, choose whether to include special characters in data
-train_data = Dataset_Reader(TRAIN_DATA_PATH, include_special_characters=True)
-test_data = Dataset_Reader(TEST_DATA_PATH, include_special_characters=True)
+train_data = Dataset_Reader(TRAIN_DATA_PATH, remove_sc=remove_special_characters)
+test_data = Dataset_Reader(TEST_DATA_PATH, remove_sc=remove_special_characters)
 
 print(f"Number of sentences in training data: {len(train_data.texts)}")
 print(f"Number of sentences in test data: {len(test_data.texts)}")
@@ -48,7 +48,7 @@ max_length_dict_TEST = read_json('max_length_dicts/max_length_test.json', readin
 doc_idxs, batched_texts, batched_labels = get_batched_data(train_data, batch_size= 1) 
 
 
-for idx in range(len(doc_idxs)):
+for idx in range(11, len(doc_idxs)):
     TRAIN_emb, TRAIN_labels = get_model_data_batched(doc_idxs[idx], batched_texts[idx], batched_labels[idx],label_encoder,max_length_dict_TRAIN, tokenizer=tokenizer, emb_model=emb_model)
     save_tensor(TRAIN_emb, 'test_document/doc_'+str(idx),"embedding")
     save_tensor(TRAIN_labels, 'test_document/doc_'+str(idx),"label")

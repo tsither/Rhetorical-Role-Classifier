@@ -21,6 +21,8 @@ from helper import grid_search_train_test, default_train_test
 
 TRAIN_DATA_PATH = 'data/train.json'
 TEST_DATA_PATH = 'data/dev.json'
+ 
+remove_special_characters = False               #for data preprocessing purposes
 
 def main():
     parser = argparse.ArgumentParser(
@@ -53,13 +55,22 @@ def main():
 
     parser.add_argument(
     '--generate_emb', dest='generate_emb',
-    help='Use this file to generate word embeddings from scratch (takes a long time)',
+    help='Use this flag to generate word embeddings from scratch (takes a long time)',
+    action='store_true'
+    )
+
+    parser.add_argument(
+    '--remove_sc', dest='remove_sc',
+    help='Use this flag to remove special characters from the data during word embedding generation',
     action='store_true'
     )
 
     args = parser.parse_args()
 
     if args.generate_emb:
+        if args.remove_sc:
+            remove_special_characters = True
+
         subprocess.run(['python', 'emb_generation.py'])
 
 

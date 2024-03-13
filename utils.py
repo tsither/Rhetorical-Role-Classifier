@@ -43,9 +43,11 @@ def get_model_data_batched(indexes:List, texts:List, labels:List, encoder:LabelE
             max_sent_length = max([max_len_dict[i] for i in indexes])
         except KeyError:
             continue
-        inputs = tokenizer(sentence[2],  return_tensors="pt", truncation= True,
-                            padding='max_length', max_length = max_sent_length,
-                            add_special_tokens= True)
+
+        if len(sentence) >= 3:
+            inputs = tokenizer(sentence[2],  return_tensors="pt", truncation= True,
+                                padding='max_length', max_length = max_sent_length,
+                                add_special_tokens= True)
         with torch.no_grad():
             output = emb_model(**inputs)
         sent_emb.append(output.last_hidden_state[:,0,:])
