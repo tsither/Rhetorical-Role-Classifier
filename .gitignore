@@ -1,1 +1,6 @@
 *Zone.Identifier
+<<<<<<< HEAD
+=======
+*__pycache__
+train_document/
+>>>>>>> 2574c2f153ac4fe341acb8d7f8c1a84d533de6ed
