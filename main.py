@@ -66,9 +66,11 @@ def main():
 
     if args.cnn_bilstm:
         model = CNN_BiLSTM()
+        legal_model = CNN_BiLSTM()
 
     elif args.bilstm:
         model = BiLSTM()
+        legal_model = BiLSTM()
 
     else:
         print("ERROR: No model chosen")
@@ -114,7 +116,7 @@ def main():
     
     if args.grid_search:
         result = grid_search_train_test(parameter_configs, 
-                                        model=model, grid_search=grid_search, 
+                                        model=model, legal_model=legal_model, grid_search=grid_search, 
                                         data_loader=load_tensor, 
                                         calculate_confusion_matrix=calculate_confusion_matrix, 
                                         class_accuracy=class_accuracy, 
@@ -126,6 +128,7 @@ def main():
         result = default_train_test(
             parameters=test_parameters,
             model=model,
+            legal_model=legal_model,
             data_loader=load_tensor,
             calculate_confusion_matrix=calculate_confusion_matrix,
             class_accuracy=class_accuracy,
