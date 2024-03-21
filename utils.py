@@ -8,6 +8,7 @@ from torch.utils.data import Dataset
 from sklearn.preprocessing import LabelEncoder
 from transformers import BertTokenizer, BertModel
 from collections import defaultdict
+from sklearn.utils.class_weight import compute_class_weight
 
 def save_model(model, filepath):
     """
@@ -47,59 +48,6 @@ def save_tensor(tensor, dir, filename):
     filepath = os.path.join(dir, filename)
     torch.save(tensor, filepath)
     # print(f"Tensor saved to '{filepath}'")
-
-def load_tensor(filepath):
-    """
-    Load PyTorch tensor from a file.
-
-    Args:
-    - filepath (str): Filepath to the saved tensor.
-
-    Returns:
-    - tensor (torch.Tensor): Loaded PyTorch tensor.
-    """
-    tensor = torch.load(filepath)
-    # print(f"Tensor loaded from '{filepath}'")
-    return tensor
-
-def save_model(model, filepath):
-    """
-    Save PyTorch model parameters to a file.
-
-    Args:
-    - model (torch.nn.Module): PyTorch model to save.
-    - filepath (str): Filepath to save the model parameters.
-    """
-    torch.save(model.state_dict(), filepath)
-    print(f"Model parameters saved to '{filepath}'")
-
-def load_model(model, filepath):
-    """
-    Load PyTorch model parameters from a file.
-
-    Args:
-    - model (torch.nn.Module): PyTorch model to load parameters into.
-    - filepath (str): Filepath to the saved model parameters.
-    """
-    model.load_state_dict(torch.load(filepath))
-    print(f"Model parameters loaded from '{filepath}'")
-    
-def save_tensor(tensor, dir, filename):
-    """
-    Save PyTorch tensor to a file.
-
-    Args:
-    - tensor (torch.Tensor): PyTorch tensor to save.
-    - dir (str): Directory to save the tensor.
-    - filename (str): Filename to save the tensor.
-    """
-    
-    if not os.path.exists(os.path.join(dir)):
-        os.makedirs(os.path.join(dir))
-        
-    filepath = os.path.join(dir, filename)
-    torch.save(tensor, filepath)
-    print(f"Tensor saved to '{filepath}'")
 
 def load_tensor(filepath):
     """
@@ -215,3 +163,10 @@ class Dataset_Reader(Dataset):
             'text': text,
             'label': label,
         }
+        
+def get_class_weights(y_train) -> torch.FloatTensor:
+    class_weights = compute_class_weight(class_weight = "balanced",
+                                        classes = np.unique(y_train),
+                                        y = y_train)
+    class_weights = torch.FloatTensor(class_weights)
+    return class_weights
