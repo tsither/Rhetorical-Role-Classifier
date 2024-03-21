@@ -1,5 +1,4 @@
 from torch.utils.data import Dataset
-from preprocessing import remove_special_characters, remove_stopwords
 import json
 ###########################################################################
 
@@ -28,18 +27,11 @@ class Dataset_Reader(Dataset):
                 for sentence in annotation['result']:
                     text = sentence['value']['text'].lower().replace('\n', '')
 
-                    if remove_sc== True: #remove special characters
-                        cleaned_text = remove_special_characters(text) 
-                        label = sentence['value']['labels'][0]
 
-                        self.texts.append([idx, label, cleaned_text])
-                        self.labels.append(label)
+                    label = sentence['value']['labels'][0]
 
-                    else: #include special characters
-                        label = sentence['value']['labels'][0]
-
-                        self.texts.append([idx, label, text])
-                        self.labels.append(label)
+                    self.texts.append([idx, label, text])
+                    self.labels.append(label)
 
 
         for sentence in self.texts:

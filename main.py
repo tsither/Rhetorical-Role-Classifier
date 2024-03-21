@@ -66,7 +66,14 @@ def main():
         print("No model chosen")
 
 
-
+    kshitij_successful_parameters = {
+        'epochs': [150],
+        'learning_rate': [5e-4],
+        'learning_rate_floor': [5e-5],
+        'dropout': [0.25],
+        'hidden_size': [256],
+        'num_layers': [1]
+        }
 
     #For default training:
     default_parameters = {
