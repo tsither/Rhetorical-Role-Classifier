@@ -9,7 +9,7 @@ import json
 
 
 class Dataset_Reader(Dataset):
-    def __init__(self, data_path, remove_sc=False):
+    def __init__(self, data_path):
         self.data_path = data_path
         self.dict = {}
         self.texts = []
