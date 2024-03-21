@@ -6,12 +6,21 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 import json
 
-# sys.path.append(os.path.abspath(os.path.join(os.getcwd(),'..')))
 
+def organize_data(data, batch_size:int = 1):
+    """
+    - Reads training/test data from Dataset_Reader class
+    - Organizes data into document indexes, text, and labels for processing
 
+    Parameters:
+    - train/test data (python class)
+    - batch_size (int) : set to 1 to process all data
 
-
-def get_batched_data(data, batch_size:int = 1):
+    Returns:
+    - doc_idx
+    - batched_texts
+    - batched_labels 
+    """
     doc_idx = []
     batched_texts = []
     batched_labels = []
@@ -31,29 +40,46 @@ def get_batched_data(data, batch_size:int = 1):
 
 
 
+def data_to_embeddings(indexes:List, texts:List, labels:List, encoder:LabelEncoder,max_len_dict:Dict,tokenizer= None, emb_model= None,) -> Tuple[torch.TensorType, torch.TensorType]:
+    """
+    Generates sentence embeddings. Able to handle multiple documents, but in our training process we generate and save embeddings in documents one at a time
 
-def get_model_data_batched(indexes:List, texts:List, labels:List, encoder:LabelEncoder,max_len_dict:Dict,
-                           tokenizer= None,
-                           emb_model= None,
-                           ) -> Tuple[torch.TensorType, torch.TensorType]:
+    Parameters:
+    - indexes (list) : indexes of each document
+    - texts (list) : text data of each document
+    - labels (list) : labels for each document
+    - encoder (class object) : object to encode labels numerically
+    - max_len_dict (dict) : dictionary containing the max sentence lengths for each document
+    - tokenizer (class) : tokenizer
+    - emb_model (class) : model to generate word (and sentence) embeddings
+
+
+    Returns:
+    x_train (pytorch tensor) : sentence embeddings for data
+    y_train (pytorch tensor) : labels for data
+
+    """
+
     numerical_labels = encoder.transform(labels)
     sent_emb = []
+    
     for idx, sentence in enumerate(texts):
         try:
-            max_sent_length = max([max_len_dict[i] for i in indexes])
+            max_sent_length = max([max_len_dict[i] for i in indexes])           #calculate the maximum sentence length with current document
         except KeyError:
             continue
 
-        if len(sentence) >= 3:
-            inputs = tokenizer(sentence[2],  return_tensors="pt", truncation= True,
+        inputs = tokenizer(sentence,  return_tensors="pt", truncation= True,            #tokenize input for embedding generation      
                                 padding='max_length', max_length = max_sent_length,
                                 add_special_tokens= True)
         with torch.no_grad():
-            output = emb_model(**inputs)
-        sent_emb.append(output.last_hidden_state[:,0,:])
-    x_train = np.zeros((len(sent_emb), 1, 768), dtype=float)
+            output = emb_model(**inputs)                        #create embedding
+        sent_emb.append(output.last_hidden_state[:,0,:])        #get pooled sentence embedding 
+
+    x_train = np.zeros((len(sent_emb), 1, 768), dtype=float)        #instantiate objects to store embeddings
     y_train = torch.from_numpy(numerical_labels)
-    for idx, sentence in enumerate(sent_emb):
+
+    for idx, sentence in enumerate(sent_emb):               #populate embedding object
         x_train[idx] = sent_emb[idx]
     x_train = torch.from_numpy(x_train).float()
     print(f"X_train size: {x_train.size()}\tY_train size: {y_train.size()}")
@@ -61,45 +87,58 @@ def get_model_data_batched(indexes:List, texts:List, labels:List, encoder:LabelE
 
 
 def init_weights(m):
+    """
+    - Initialize weights for a pytorch model 
+    Parameters:
+    - m (pytorch model)
+    Returns:
+    None
+    """
     if isinstance(m, nn.Linear):
         torch.nn.init.xavier_uniform_(m.weight)
         m.bias.data.fill_(0.01)
 
 
 def save_model(model, filepath):
-    """
-    Save PyTorch model parameters to a file.
 
-    Args:
+    """
+    Save PyTorch model to a file.
+
+    Parameters:
     - model (torch.nn.Module): PyTorch model to save.
     - filepath (str): Filepath to save the model parameters.
+    Returns:
+    None
     """
     torch.save(model.state_dict(), filepath)
     print(f"Model parameters saved to '{filepath}'")
-
-
 
 
 def load_model(model, filepath):
     """
     Load PyTorch model parameters from a file.
 
-    Args:
-    - model (torch.nn.Module): PyTorch model to load parameters into.
+    Parameters:
+    - model (torch.nn.Module): pytorch model to load parameters into.
     - filepath (str): Filepath to the saved model parameters.
+    Returns:
+    - m (pytorch model) : loaded pytorch model
     """
-    model.load_state_dict(torch.load(filepath))
+    m = model.load_state_dict(torch.load(filepath))
     print(f"Model parameters loaded from '{filepath}'")
+    return m
     
     
 def save_tensor(tensor, dir, filename):
     """
-    Save PyTorch tensor to a file.
+    Save pytorch tensor to a file.
 
-    Args:
-    - tensor (torch.Tensor): PyTorch tensor to save.
+    Parameters:
+    - tensor (torch.Tensor): pytorch tensor to save.
     - dir (str): Directory to save the tensor.
     - filename (str): Filename to save the tensor.
+    Returns:
+    None
     """
     
     if not os.path.exists(os.path.join(dir)):
@@ -111,13 +150,13 @@ def save_tensor(tensor, dir, filename):
 
 def load_tensor(filepath):
     """
-    Load PyTorch tensor from a file.
+    Load pytorch tensor from a file
 
-    Args:
-    - filepath (str): Filepath to the saved tensor.
+    Parameters:
+    - filepath (str): filepath to the saved tensor
 
     Returns:
-    - tensor (torch.Tensor): Loaded PyTorch tensor.
+    - tensor (torch.Tensor): loaded pytorch tensor
     """
     tensor = torch.load(filepath)
     # print(f"Tensor loaded from '{filepath}'")
@@ -125,10 +164,18 @@ def load_tensor(filepath):
 
 
 def read_json(FILEPATH, type='r', reading_max_length=False):
+    """
+    Read json file from filepath, return data as python dictionary
+
+    Parameters:
+    - filepath (str) : filepath to json file
+    Returns:
+    data (dict) : data from json file
+    """
     with open(FILEPATH, type) as file:
         data = json.load(file)
 
-    #Covert the keys to integers for efficient document processing
+    #Covert the keys to integers for efficient document processing if being used to create max length dictionary
     if reading_max_length:
         if isinstance(data, dict):
             new_data = {int(key): value for key, value in data.items()}
@@ -138,13 +185,13 @@ def read_json(FILEPATH, type='r', reading_max_length=False):
 
 def label_encode(target_variables : list) -> LabelEncoder:
     """
-    Encode target variables.
+    Encode target variables
     
     Args:
-    - target_variables (list or array-like): List of target variable strings.
+    - target_variables (list or array-like): List of target variable strings
     
     Returns:
-    - lb (object): class object used to tranform and inverse transform.
+    - le (object): class object used to tranform and inverse transform
     """
     le = LabelEncoder()
     le = le.fit(target_variables)
@@ -154,14 +201,18 @@ def label_encode(target_variables : list) -> LabelEncoder:
 
 def document_max_length(documents, tokenizer):
     """
-    Generate the maximum length of each sentence in each document. This is necessary to make sure there is a fixed sentence-length 
-    for each document before we pass the sentence embeddings through the model.
+    Generate the maximum length of each sentence in each document (necessary to make sure there is a fixed sentence-length 
+    for each document before we pass the sentence embeddings through the model)
 
-    Returns: {document index: length of longest sentence}
+    Parameters:
+    - batch of total training or test documents (python class)
+
+    Returns: 
+    - max_length_dict (dict): {document index: length of longest sentence}
 
     """
     max_length_dict = {}
-    for index, sentences in documents.dict.items():
+    for index, sentences in documents.dict.items():         #in data class, grab items from dictionary containing data for all the documents
         sizes = []
 
         for sentence in sentences:
@@ -175,11 +226,12 @@ def document_max_length(documents, tokenizer):
 
 def write_dictionary_to_json(dictionary, file_path):
     """
-    Write a dictionary to a JSON file.
+
+    create a json file from a dictionary
 
     Parameters:
-    - dictionary : dictionary to be written to the JSON file.
-    - file_path: path to the JSON file.
+    - dictionary : dictionary to be written to the json file
+    - file_path: path to the json file
 
     Returns:
     - None
@@ -189,5 +241,4 @@ def write_dictionary_to_json(dictionary, file_path):
 
     print(f"Successfully wrote dictionary to JSON file: {file_path}")
 
-    pass
 

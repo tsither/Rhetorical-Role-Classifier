@@ -13,6 +13,12 @@ from itertools import product
 
 
 def test_accuracy(x_test, y_test, model):
+    """
+
+    Parameters:
+
+    Returns:
+    """
     model.eval()
     output = model(x_test)
     acc = sum(output.argmax(dim=1) == y_test)/ output.size(0)
@@ -21,6 +27,12 @@ def test_accuracy(x_test, y_test, model):
 
 
 def set_highest_to_one(tensor):
+    """
+
+    Parameters:
+
+    Returns:
+    """
     max_val, max_idx = tensor.max(dim=1, keepdim=True)
     result = torch.zeros_like(tensor)
     result.scatter_(1, max_idx, 1)
@@ -32,7 +44,7 @@ def class_accuracy(conf_matrix):
     Calculate accuracy for each class based on a confusion matrix.
 
     Parameters:
-    conf_matrix (numpy.ndarray): Confusion matrix.
+    conf_matrix (numpy array): Confusion matrix.
 
     Returns:
     list: List of accuracies for each class.
@@ -96,6 +108,12 @@ def confusion_matrix(y_pred, y_true, num_classes):
 
 
 def grid_search(parameters):
+    """
+
+    Parameters:
+
+    Returns:
+    """
     keys = parameters.keys()
     values = parameters.values()
     
@@ -107,9 +125,21 @@ def grid_search(parameters):
 
 
 def calculate_confusion_matrix(test_emb, test_labels, model):
+    """
+
+    Parameters:
+
+    Returns:
+    """
     model.eval()
     output = model(test_emb)
     return confusion_matrix(output, test_labels, 13)
 
 def get_accuracy_value(item):
+    """
+
+    Parameters:
+
+    Returns:
+    """
     return item[1][0]

@@ -1,5 +1,7 @@
 import torch.nn as nn
 from utils import init_weights
+from torchcrf import CRF
+import torch
 
 ###########################################################################
 

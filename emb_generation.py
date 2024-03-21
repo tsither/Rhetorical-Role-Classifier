@@ -1,6 +1,6 @@
 from transformers import BertTokenizer, BertModel
 from Dataset_Reader import Dataset_Reader
-from utils import read_json, get_model_data_batched, save_tensor, label_encode, get_batched_data
+from utils import read_json, data_to_embeddings, save_tensor, label_encode, organize_data
 from utils import document_max_length, write_dictionary_to_json
 
 from main import TRAIN_DATA_PATH, TEST_DATA_PATH, remove_special_characters
@@ -34,7 +34,7 @@ label_encoder = label_encode(list_of_targets)
 max_length_dict_TRAIN = document_max_length(train_data, tokenizer=tokenizer)
 max_length_dict_TEST = document_max_length(test_data, tokenizer=tokenizer)
 
-# To same time during training process, write these documents to json file
+# # To same time during training process, write these documents to json file
 write_dictionary_to_json(max_length_dict_TRAIN, 'max_length_dicts/max_length_train.json')
 write_dictionary_to_json(max_length_dict_TEST, 'max_length_dicts/max_length_test.json')
 
@@ -45,18 +45,19 @@ max_length_dict_TEST = read_json('max_length_dicts/max_length_test.json', readin
 
 
 #organize and process data
-doc_idxs, batched_texts, batched_labels = get_batched_data(train_data, batch_size= 1) 
+doc_idxs_train, batched_texts_train, batched_labels_train = organize_data(train_data, batch_size= 1) 
 
+#generate TRAINING embeddings and save them locally
+for idx in range(len(doc_idxs_train)):
+    TRAIN_emb, TRAIN_labels = data_to_embeddings(doc_idxs_train[idx], batched_texts_train[idx], batched_labels_train[idx],label_encoder,max_length_dict_TRAIN, tokenizer=tokenizer, emb_model=emb_model)
+    save_tensor(TRAIN_emb, 'train_document/doc_'+str(idx),"embedding")
+    save_tensor(TRAIN_labels, 'train_document/doc_'+str(idx),"label")
 
-for idx in range(11, len(doc_idxs)):
-    TRAIN_emb, TRAIN_labels = get_model_data_batched(doc_idxs[idx], batched_texts[idx], batched_labels[idx],label_encoder,max_length_dict_TRAIN, tokenizer=tokenizer, emb_model=emb_model)
-    save_tensor(TRAIN_emb, 'test_document/doc_'+str(idx),"embedding")
-    save_tensor(TRAIN_labels, 'test_document/doc_'+str(idx),"label")
+#organize and process data
+doc_idxs_test, batched_texts_test, batched_labels_test = organize_data(test_data, batch_size= 1)
 
-
-# #####CURRENTLY ADAPTING FOR DIFFERENT PREPROCESSING FEATURES
-# for idx in range(len(doc_idxs)):
-#     TRAIN_emb, TRAIN_labels = get_model_data_batched(doc_idxs[idx], batched_texts[idx], batched_labels[idx],label_encoder,max_length_dict_TRAIN, tokenizer=tokenizer, emb_model=emb_model)
-#     save_tensor(TRAIN_emb, 'tensors_no_special_characters/doc_'+str(idx),"embedding")
-#     save_tensor(TRAIN_labels, 'tensors_no_special_characters/doc_'+str(idx),"label")
-
+#generate TESTING embeddings and save them locally
+for idx in range(len(doc_idxs_test)):
+    TEST_emb, TEST_labels = data_to_embeddings(doc_idxs_test[idx], batched_texts_test[idx], batched_labels_test[idx],label_encoder,max_length_dict_TEST, tokenizer=tokenizer, emb_model=emb_model)
+    save_tensor(TEST_emb, 'test_document/test/doc_'+str(idx),"embedding")
+    save_tensor(TEST_labels, 'test_document/test/doc_'+str(idx),"label")
