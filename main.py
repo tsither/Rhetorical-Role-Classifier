@@ -1,19 +1,19 @@
 import argparse
-import subprocess
 import time
 
-from models import CNN_BiLSTM, BiLSTM, CRF_BiLSTM
+from models import CNN_BiLSTM, BiLSTM
 
-from utils import load_tensor
+from utils import load_tensor, get_class_weights
 from evaluation_functions import get_accuracy_value, grid_search, calculate_confusion_matrix, class_accuracy, class_f1_score
-from helper import grid_search_train_test, default_train_test, crf_train_test
+from helper_default import grid_search_train_test, default_train_test
+from helper_advanced import advanced_train_test
 
 
 ###########################################################################
 
 # main file, run this file in your command line with the arguments:
 
-# --default_train OR --grid_search
+# --default_train OR --grid_search OR --advanced_train 
 #        AND
 # --bilstm OR --cnn_bilstm
 
@@ -40,10 +40,20 @@ def main():
         help='Train using grid search across multiple parameters',
         action='store_true'
     )
+    parser.add_argument(
+        '--advanced_train', dest='advanced_train',
+        help='Train on single set of parameters with custom class weights & variable lr',
+        action='store_true'
+    )
+    # parser.add_argument(
+    #     '--advanced_grid_search', dest='advanced_grid_search',
+    #     help='Train on single set of parameters with custom class weights & variable lr',
+    #     action='store_true'
+    # )
     
     parser.add_argument(
         '--bilstm', dest='bilstm',
-        help='Use this flag to train a BiLSTM model (default)',
+        help='Use this flag to train a BiLSTM model',
         action='store_true'
     )
     
@@ -63,20 +73,20 @@ def main():
         model = BiLSTM()
 
     else:
-        print("No model chosen")
+        print("ERROR: No model chosen")
 
-
-    kshitij_successful_parameters = {
-        'epochs': [150],
-        'learning_rate': [5e-4],
-        'learning_rate_floor': [5e-5],
-        'dropout': [0.25],
-        'hidden_size': [256],
-        'num_layers': [1]
+    #For training individual models
+    parameters = {
+        'epochs': 200,
+        'learning_rate': 5e-4,
+        'learning_rate_floor': 5e-5,
+        'dropout': 0.25,
+        'hidden_size': 256,
+        'num_layers': 1
         }
 
-    #For default training:
-    default_parameters = {
+    #For testing functionality:
+    test_parameters = {
     'epochs': 1,
     'learning_rate': 0.0001,
     'dropout': 0.1,
@@ -87,20 +97,13 @@ def main():
 
     #For grid search training
     parameter_configs = {
-        'epochs': [10,20,30],
+        'epochs': [10,20],
         'learning_rate': [0.0001, 0.001],
         'dropout': [0.0, 0.1, 0.2],
         'hidden_size': [128, 256],
         'num_layers': [1, 2]
         }
-    
-    # parameter_configs = {
-    #     'epochs': [1,2,3],
-    #     'learning_rate': [0.0001],
-    #     'dropout': [0.0],
-    #     'hidden_size': [128],
-    #     'num_layers': [1]
-    #     }
+
     
     if args.grid_search:
         result = grid_search_train_test(parameter_configs, 
@@ -116,7 +119,7 @@ def main():
 
     elif args.default_train:
         result = default_train_test(
-            parameters=default_parameters,
+            parameters=parameters,
             model=model,
             data_loader=load_tensor,
             calculate_confusion_matrix=calculate_confusion_matrix,
@@ -126,6 +129,17 @@ def main():
         max_accuracy_config = max(result, key=get_accuracy_value)
 
         print(max_accuracy_config)
+
+    elif args.advanced_train:
+        result = advanced_train_test(
+                    parameters=parameters,
+                    model=model,
+                    data_loader=load_tensor,
+                    calculate_confusion_matrix=calculate_confusion_matrix,
+                    class_accuracy=class_accuracy,
+                    class_f1_score=class_f1_score,
+                    get_class_weights=get_class_weights
+                )
 
     else:
         print("No model trained")

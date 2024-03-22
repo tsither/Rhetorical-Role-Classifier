@@ -5,8 +5,26 @@ import torch
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 import json
+from sklearn.utils.class_weight import compute_class_weight
 
+def get_class_weights() -> torch.FloatTensor:
+    sample_input, sample_target = None, None
+    for idx in range(246):
+        if sample_input is None:
+            sample_input = load_tensor(filepath=f"train_document/doc_{idx}/embedding")
+            sample_target = load_tensor(filepath=f"train_document/doc_{idx}/label")
+        else:
+            sample_input = torch.cat((sample_input,load_tensor(filepath=f"train_document/doc_{idx}/embedding")), dim=0)
+            sample_target = torch.cat((sample_target,load_tensor(filepath=f"train_document/doc_{idx}/label")), dim=0)
 
+    sample_target = sample_target.long() 
+    y_train = sample_target.numpy()
+    
+    class_weights = compute_class_weight(class_weight = "balanced",
+                                        classes = np.unique(y_train),
+                                        y = y_train)
+    class_weights = torch.FloatTensor(class_weights)
+    return class_weights
 def organize_data(data, batch_size:int = 1):
     """
     - Reads training/test data from Dataset_Reader class

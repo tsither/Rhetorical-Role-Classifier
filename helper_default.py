@@ -6,13 +6,14 @@ from tqdm import tqdm
 
 ###########################################################################
 
-# File includes functions related to the training and evaluation process
+# File includes functions related to training and basic performance evaluation
 
 ###########################################################################
 
 
-def train_model(model, data_loader, loss_function, optimizer, epochs):
+def train_model_default(model, data_loader, loss_function, optimizer, epochs):
     """
+    Default training process (WITHOUT variable learning rate, remapping targets, and custom class weight loss)
     (explicit training function, called in larger train_test function)
     - grabs pre-trained sentence embeddings stored locally
     - trains model document by document across all 246 documents
@@ -25,18 +26,22 @@ def train_model(model, data_loader, loss_function, optimizer, epochs):
     - optimizer
     - epochs : number of epochs you wish to train on
 
+
     Returns:
     - average loss across all documents (numpy float64 )
     """
     model.train()
-    batch_loss = []
+    losses_over_epochs = []
+    running_lr = []
+
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}/{epochs}")
 
-#iterate over all documents
+        #iterate over all documents
         for doc_idx in tqdm(range(246)): 
                 TRAIN_emb = data_loader(filepath=f"train_document/doc_{doc_idx}/embedding")
                 TRAIN_labels = data_loader(filepath=f"train_document/doc_{doc_idx}/label")
+
                 if TRAIN_emb.size(0) == 0: #ignore any faulty embeddings
                     continue
                 output = model(TRAIN_emb) #push embeddings through model 
@@ -47,8 +52,10 @@ def train_model(model, data_loader, loss_function, optimizer, epochs):
                 optimizer.step()
 
         print(f"Epoch: {epoch+1} | Document: {doc_idx+1}/246 | Loss: {loss.item():.5f}")
-        batch_loss.append(loss.item()) #calculate loss across all documents
-    return np.mean(batch_loss)
+        running_lr.append(optimizer.state_dict()['param_groups'][0]['lr'])      #keep track of the variable learning rates over epochs
+
+        losses_over_epochs.append(loss.item()) #store final loss for each document, then average across all documents
+    return np.mean(losses_over_epochs)
 
 
 
@@ -120,7 +127,7 @@ def default_train_test(parameters, model, data_loader, calculate_confusion_matri
 
 
     print(f'{"Starting Training":-^100}')
-    train_loss = train_model(model, data_loader, loss_function, model_opt, parameters['epochs']) #train model
+    train_loss = train_model_default(model, data_loader, loss_function, model_opt, parameters['epochs']) #train model
     
     #test model
     accuracies, f1_scores, average_accuracy, average_f1 = test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)
@@ -155,11 +162,8 @@ def grid_search_train_test(parameters, model, grid_search, data_loader, calculat
     - result (list) : object display both the parameters used to train the model and evaluation metrics on how the model performed
 
     """
-
-
     result = []             #instantiate list object to hold info on parameters/evaluation
 
-    
     parameter_configs = grid_search(parameters)         #gather parameters for the grid search defined in main.py
     
     #iterate over all possible hyperparameter configurations 
@@ -173,11 +177,9 @@ def grid_search_train_test(parameters, model, grid_search, data_loader, calculat
         print("Train type: grid search")
 
         print("\n")
-
-        
         
         print(f'{"Starting Training":-^100}')
-        train_loss = train_model(model, data_loader, loss_function, model_opt, config['epochs'])         #train model
+        train_loss = train_model_default(model, data_loader, loss_function, model_opt, config['epochs'])         #train model
         
         accuracies, f1_scores, average_accuracy, average_f1 = test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)  #evaluate model, return metrics
         
