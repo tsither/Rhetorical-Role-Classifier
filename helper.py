@@ -11,7 +11,7 @@ from tqdm import tqdm
 ###########################################################################
 
 
-def train_model_default(model, data_loader, loss_function, optimizer, epochs):
+def train_model_default(model, data_loader, loss_function, optimizer, epochs, legal_bert=False):
     """
     Default training process (WITHOUT variable learning rate, remapping targets, and custom class weight loss)
     (explicit training function, called in larger train_test function)
@@ -39,6 +39,10 @@ def train_model_default(model, data_loader, loss_function, optimizer, epochs):
 
         #iterate over all documents
         for doc_idx in tqdm(range(246)): 
+            if legal_bert:
+                TRAIN_emb = data_loader(filepath=f"train_document/doc_{doc_idx}_legal/embedding")
+                TRAIN_labels = data_loader(filepath=f"train_document/doc_{doc_idx}_legal/label")
+            else:
                 TRAIN_emb = data_loader(filepath=f"train_document/doc_{doc_idx}/embedding")
                 TRAIN_labels = data_loader(filepath=f"train_document/doc_{doc_idx}/label")
 
@@ -60,7 +64,7 @@ def train_model_default(model, data_loader, loss_function, optimizer, epochs):
 
 
 
-def test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score):
+def test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, legal_bert=False):
     """
     (explicit evaluation function, called in larger train_test function)
     - grabs test embeddings and labels for each test document
@@ -81,8 +85,13 @@ def test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, c
     """
     confusion_matrix = None
     for i in range(29):
-        TEST_emb = data_loader(filepath=f"test_document/doc_{i}/embedding")
-        TEST_labels = data_loader(filepath=f"test_document/doc_{i}/label")
+        if legal_bert:
+            TEST_emb = data_loader(filepath=f"test_document/doc_{i}_legal/embedding")
+            TEST_labels = data_loader(filepath=f"test_document/doc_{i}_legal/label")
+        else:
+            TEST_emb = data_loader(filepath=f"test_document/doc_{i}/embedding")
+            TEST_labels = data_loader(filepath=f"test_document/doc_{i}/label")
+
         conf_matrix_helper = calculate_confusion_matrix(TEST_emb, TEST_labels, model)
         if confusion_matrix is None: #if no confusion matrix is given, use default confusion matrix
             confusion_matrix = conf_matrix_helper 
@@ -97,7 +106,7 @@ def test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, c
     return accuracies, f1_scores, average_accuracy, average_f1, confusion_matrix
 
 
-def default_train_test(parameters, model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score):
+def default_train_test(parameters, model, legal_model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score):
     """
     (Overhead function called in main.py to train and evaluate model)
 
@@ -118,6 +127,7 @@ def default_train_test(parameters, model, data_loader, calculate_confusion_matri
 
     #define model optimizer and loss function
     model_opt = torch.optim.Adam(model.parameters(), lr= parameters['learning_rate']) #define model optimizer and loss function
+    legal_model_opt = torch.optim.Adam(legal_model.parameters(), lr= parameters['learning_rate'])
     loss_function = nn.CrossEntropyLoss()
     print("\nWorking with: ")
     print(parameters)
@@ -145,7 +155,7 @@ def default_train_test(parameters, model, data_loader, calculate_confusion_matri
 
 
 
-def grid_search_train_test(parameters, model, grid_search, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score):
+def grid_search_train_test(parameters, model, legal_model, grid_search, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score):
     """
     (Overhead function called in main.py to train and evaluate model)
 
@@ -171,6 +181,7 @@ def grid_search_train_test(parameters, model, grid_search, data_loader, calculat
     for config in parameter_configs:
 
         model_opt = torch.optim.Adam(model.parameters(), lr= config['learning_rate'])       #define model optimizer and loss function
+        legal_model_opt = torch.optim.Adam(legal_model.parameters(), lr= config['learning_rate'])
         loss_function = nn.CrossEntropyLoss()
         print("\nWorking with: ")
         print(config)
@@ -181,29 +192,29 @@ def grid_search_train_test(parameters, model, grid_search, data_loader, calculat
         
         print(f'{"Starting Training":-^100}')
         epochs = config['epochs']
+        
+        avg_loss, running_lr, loss_over_epochs, model = train_model_default(model, data_loader, loss_function, model_opt, epochs)
+    
+        avg_loss_legal, running_lr_legal, loss_over_epochs_legal, legal_model = train_model_default(legal_model, data_loader, loss_function, legal_model_opt, epochs, True)
+    
+        accuracies_base, f1_scores_base, average_accuracy_base, average_f1_base, confusion_matrix = test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)
+    
+        accuracies_base_legal, f1_scores_base_legal, average_accuracy_base_legal, average_f1_base_legal, confusion_matrix_legal = test_model(legal_model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, legal_bert=True)
 
-        avg_loss, running_lr, loss_over_epochs, model= train_model_default(model, data_loader, loss_function, model_opt, epochs) #train model
-        
-        accuracies, f1_scores, average_accuracy, average_f1, confusion_matrix = test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)  #evaluate model, return metrics
-        
-        print("Accuracies: {} \n Average accuracy: {}".format(accuracies, average_accuracy))
-        print("F1 Scores: {} \n Average F1: {}".format(f1_scores, average_f1))
+    
+        print("Accuracies: {} \n Average accuracy: {}".format(accuracies_base, average_accuracy_base))
+        print("F1 Scores: {} \n Average F1: {}".format(f1_scores_base, average_f1_base))
+    
+        print("Accuracies Legal BERT: {} \n Average accuracy Legal BERT: {}".format(accuracies_base_legal, average_accuracy_base_legal))
+        print("F1 Scores Legal BERT: {} \n Average F1 Legal BERT: {}".format(f1_scores_base_legal, average_f1_base_legal))
+
         
     result.append((parameters, (average_accuracy, average_f1)))     #add parameters and metrics to object for each configuration
         
     return result, confusion_matrix, running_lr, loss_over_epochs, model
 
 
-
-
-
-
-
-
-
-
-
-def train_model_advanced(model, data_loader, loss_function, optimizer, epochs):
+def train_model_advanced(model, data_loader, loss_function, optimizer, epochs, legal_bert=False):
     """
     Option to combine similar labels
 
@@ -232,8 +243,13 @@ def train_model_advanced(model, data_loader, loss_function, optimizer, epochs):
 
 #iterate over all documents
         for doc_idx in tqdm(range(246)): 
-                TRAIN_emb = data_loader(filepath=f"train_document/doc_{doc_idx}/embedding")
-                TRAIN_labels = data_loader(filepath=f"train_document/doc_{doc_idx}/label")
+                if legal_bert:
+                    TRAIN_emb = data_loader(filepath=f"train_document/doc_{doc_idx}_legal/embedding")
+                    TRAIN_labels = data_loader(filepath=f"train_document/doc_{doc_idx}_legal/label")
+                else:
+                    TRAIN_emb = data_loader(filepath=f"train_document/doc_{doc_idx}/embedding")
+                    TRAIN_labels = data_loader(filepath=f"train_document/doc_{doc_idx}/label")
+
 
                 if TRAIN_emb.size(0) == 0: #ignore any faulty embeddings
                     continue
@@ -253,7 +269,7 @@ def train_model_advanced(model, data_loader, loss_function, optimizer, epochs):
 
 
 
-def test_model_advanced(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score):
+def test_model_advanced(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, legal_bert=False):
     """
     Option to combine similar labels
 
@@ -276,9 +292,13 @@ def test_model_advanced(model, data_loader, calculate_confusion_matrix, class_ac
     """
     confusion_matrix = None
     for i in range(29):
-        TEST_emb = data_loader(filepath=f"test_document/doc_{i}/embedding")
-        TEST_labels = data_loader(filepath=f"test_document/doc_{i}/label")
-
+        if legal_bert:
+            TEST_emb = data_loader(filepath=f"test_document/doc_{i}_legal/embedding")
+            TEST_labels = data_loader(filepath=f"test_document/doc_{i}_legal/label")
+        else:
+            TEST_emb = data_loader(filepath=f"test_document/doc_{i}/embedding")
+            TEST_labels = data_loader(filepath=f"test_document/doc_{i}/label")
+            
         conf_matrix_helper = calculate_confusion_matrix(TEST_emb, TEST_labels, model)
         if confusion_matrix is None: #if no confusion matrix is given, use default confusion matrix
             confusion_matrix = conf_matrix_helper 
@@ -293,7 +313,7 @@ def test_model_advanced(model, data_loader, calculate_confusion_matrix, class_ac
     return accuracies, f1_scores, average_accuracy, average_f1, confusion_matrix
 
 
-def advanced_train_test(parameters, model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, get_class_weights):
+def advanced_train_test(parameters, model, legal_model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, get_class_weights):
     """
     (Overhead function called in main.py to train and evaluate model)
     
@@ -318,6 +338,7 @@ def advanced_train_test(parameters, model, data_loader, calculate_confusion_matr
     result = []             #instantiate list object to hold info on parameters/evaluation
     #define model optimizer and loss function
     model_opt = torch.optim.Adam(model.parameters(), lr= parameters['learning_rate']) #define model optimizer and loss function
+    legal_model_opt = torch.optim.Adam(legal_model.parameters(), lr= parameters['learning_rate'])
     loss_function = nn.CrossEntropyLoss(weight=class_weights)
     print("\nWorking with: ")
     print(parameters)
@@ -326,15 +347,21 @@ def advanced_train_test(parameters, model, data_loader, calculate_confusion_matr
     print("\n")
 
     print(f'{"Starting Training":-^100}')
-    avg_loss, running_lr, loss_over_epochs, model = train_model_advanced(model, data_loader, loss_function, model_opt, parameters['epochs']) #train model
     
-    #test model
-    accuracies, f1_scores, average_accuracy, average_f1, confusion_matrix = test_model_advanced(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)
+    avg_loss, running_lr, loss_over_epochs, model = train_model_advanced(model, data_loader, loss_function, model_opt, parameters['epochs'])
+    
+    avg_loss_legal, running_lr_legal, loss_over_epochs_legal, legal_model = train_model_advanced(legal_model, data_loader, loss_function, legal_model_opt, parameters['epochs'], True)
+    
+    accuracies_base, f1_scores_base, average_accuracy_base, average_f1_base, confusion_matrix = test_model_advanced(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)
+    
+    accuracies_base_legal, f1_scores_base_legal, average_accuracy_base_legal, average_f1_base_legal, confusion_matrix_legal = test_model(legal_model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, legal_bert=True)
 
-    print("Accuracies: {} \n Average accuracy: {}".format(accuracies, average_accuracy))
-    print("F1 Scores: {} \n Average F1: {}".format(f1_scores, average_f1))
     
-    result.append((parameters, (average_accuracy, average_f1)))
+    print("Accuracies: {} \n Average accuracy: {}".format(accuracies_base, average_accuracy_base))
+    print("F1 Scores: {} \n Average F1: {}".format(f1_scores_base, average_f1_base))
+    
+    print("Accuracies Legal BERT: {} \n Average accuracy Legal BERT: {}".format(accuracies_base_legal, average_accuracy_base_legal))
+    print("F1 Scores Legal BERT: {} \n Average F1 Legal BERT: {}".format(f1_scores_base_legal, average_f1_base_legal))
 
 
     return result, confusion_matrix, running_lr, loss_over_epochs, model
@@ -342,7 +369,7 @@ def advanced_train_test(parameters, model, data_loader, calculate_confusion_matr
 
 
 
-def advanced_grid_search_train_test(parameters, model, grid_search, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, get_class_weights):
+def advanced_grid_search_train_test(parameters, model, legal_model, grid_search, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, get_class_weights):
     """
     
     (Overhead function called in main.py to train and evaluate model)
@@ -379,6 +406,8 @@ def advanced_grid_search_train_test(parameters, model, grid_search, data_loader,
     for config in parameter_configs:
 
         model_opt = torch.optim.Adam(model.parameters(), lr= config['learning_rate'])       #define model optimizer and loss function
+        legal_model_opt = torch.optim.Adam(legal_model.parameters(), lr= config['learning_rate'])
+
         loss_function = nn.CrossEntropyLoss(weight=class_weights)
         print("\nWorking with: ")
         print(config)
@@ -388,12 +417,27 @@ def advanced_grid_search_train_test(parameters, model, grid_search, data_loader,
         print("\n")
         
         print(f'{"Starting Training":-^100}')
-        train_loss, running_lr, loss_over_epochs, model = train_model_advanced(model, data_loader, loss_function, model_opt, config['epochs'])         #train model
+        # train_loss, running_lr, loss_over_epochs, model = train_model_advanced(model, data_loader, loss_function, model_opt, config['epochs'])         #train model
         
-        accuracies, f1_scores, average_accuracy, average_f1, confusion_matrix = test_model_advanced(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)  #evaluate model, return metrics
+        # accuracies, f1_scores, average_accuracy, average_f1, confusion_matrix = test_model_advanced(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)  #evaluate model, return metrics
         
-        print("Accuracies: {} \n Average accuracy: {}".format(accuracies, average_accuracy))
-        print("F1 Scores: {} \n Average F1: {}".format(f1_scores, average_f1))
+        # print("Accuracies: {} \n Average accuracy: {}".format(accuracies, average_accuracy))
+        # print("F1 Scores: {} \n Average F1: {}".format(f1_scores, average_f1))
+        
+        avg_loss, running_lr, loss_over_epochs, model = train_model_advanced(model, data_loader, loss_function, model_opt, config['epochs'])
+    
+        avg_loss_legal, running_lr_legal, loss_over_epochs_legal, legal_model = train_model_advanced(legal_model, data_loader, loss_function, legal_model_opt, config['epochs'], True)
+    
+        accuracies_base, f1_scores_base, average_accuracy_base, average_f1_base, confusion_matrix = test_model_advanced(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)
+    
+        accuracies_base_legal, f1_scores_base_legal, average_accuracy_base_legal, average_f1_base_legal, confusion_matrix_legal = test_model_advanced(legal_model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, legal_bert=True)
+
+    
+        print("Accuracies: {} \n Average accuracy: {}".format(accuracies_base, average_accuracy_base))
+        print("F1 Scores: {} \n Average F1: {}".format(f1_scores_base, average_f1_base))
+    
+        print("Accuracies Legal BERT: {} \n Average accuracy Legal BERT: {}".format(accuracies_base_legal, average_accuracy_base_legal))
+        print("F1 Scores Legal BERT: {} \n Average F1 Legal BERT: {}".format(f1_scores_base_legal, average_f1_base_legal))
         
     result.append((parameters, (average_accuracy, average_f1)))     #add parameters and metrics to object for each configuration
         
