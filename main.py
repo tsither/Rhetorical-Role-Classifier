@@ -140,6 +140,7 @@ def main():
         result = advanced_train_test(
                     parameters=parameters,
                     model=model,
+                    legal_model= legal_model,
                     data_loader=load_tensor,
                     calculate_confusion_matrix=calculate_confusion_matrix,
                     class_accuracy=class_accuracy,
@@ -151,6 +152,7 @@ def main():
         result = advanced_grid_search_train_test(
                     parameters=parameter_configs,
                     model=model,
+                    legal_model=legal_model,
                     grid_search=grid_search,
                     data_loader=load_tensor,
                     calculate_confusion_matrix=calculate_confusion_matrix,
