@@ -33,7 +33,6 @@ class BiLSTM(nn.Module):
                                    nn.Linear(hidden_size*2, 128),
                                    nn.ReLU(),
                                    nn.Linear(128, output_size),
-                                   nn.Softmax(dim=1),
         )
         
         self.apply(init_weights)
@@ -73,7 +72,6 @@ class CNN_BiLSTM(nn.Module):
                                    nn.Linear(hidden_size*2, 128),
                                    nn.ReLU(),
                                    nn.Linear(128, output_size),
-                                   nn.Softmax(dim=1),
         )
         
         self.apply(init_weights)

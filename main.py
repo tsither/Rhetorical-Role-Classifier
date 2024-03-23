@@ -4,16 +4,15 @@ import time
 from models import CNN_BiLSTM, BiLSTM
 
 from utils import load_tensor, get_class_weights
-from evaluation_functions import get_accuracy_value, grid_search, calculate_confusion_matrix, class_accuracy, class_f1_score
-from helper_default import grid_search_train_test, default_train_test
-from helper_advanced import advanced_train_test
+from evaluation_functions import grid_search, calculate_confusion_matrix, class_accuracy, class_f1_score
+from helper import grid_search_train_test, default_train_test, advanced_train_test, advanced_grid_search_train_test
 
 
 ###########################################################################
 
 # main file, run this file in your command line with the arguments:
 
-# --default_train OR --grid_search OR --advanced_train 
+# --default_train OR --grid_search OR --advanced_train OR --advanced_grid_search
 #        AND
 # --bilstm OR --cnn_bilstm
 
@@ -22,7 +21,6 @@ from helper_advanced import advanced_train_test
 TRAIN_DATA_PATH = 'data/train.json'
 TEST_DATA_PATH = 'data/dev.json'
  
-remove_special_characters = False               #for data preprocessing 
 
 def main():
     parser = argparse.ArgumentParser(
@@ -45,12 +43,12 @@ def main():
         help='Train on single set of parameters with custom class weights & variable lr',
         action='store_true'
     )
-    # parser.add_argument(
-    #     '--advanced_grid_search', dest='advanced_grid_search',
-    #     help='Train on single set of parameters with custom class weights & variable lr',
-    #     action='store_true'
-    # )
-    
+
+    parser.add_argument(
+        '--advanced_grid_search', dest='advanced_grid_search',
+        help='Train on multiple sets of parameters with custom class weights & variable lr',
+        action='store_true'
+    )
     parser.add_argument(
         '--bilstm', dest='bilstm',
         help='Use this flag to train a BiLSTM model',
@@ -75,14 +73,14 @@ def main():
     else:
         print("ERROR: No model chosen")
 
-    #For training individual models
+    #train individual models
     parameters = {
-        'epochs': 200,
+        'epochs': 100,
         'learning_rate': 5e-4,
         'learning_rate_floor': 5e-5,
         'dropout': 0.25,
-        'hidden_size': 256,
-        'num_layers': 1
+        'hidden_size': 512,
+        'num_layers': 2
         }
 
     #For testing functionality:
@@ -95,13 +93,22 @@ def main():
     }
 
 
-    #For grid search training
+    # For grid search training
     parameter_configs = {
         'epochs': [10,20],
         'learning_rate': [0.0001, 0.001],
         'dropout': [0.0, 0.1, 0.2],
         'hidden_size': [128, 256],
         'num_layers': [1, 2]
+        }
+    
+    #testing grid search functionality
+    test_parameter_configs = {
+        'epochs': [1,2],
+        'learning_rate': [0.0001],
+        'dropout': [0.1],
+        'hidden_size': [128],
+        'num_layers': [1]
         }
 
     
@@ -113,27 +120,35 @@ def main():
                                         class_accuracy=class_accuracy, 
                                         class_f1_score=class_f1_score)
 
-        max_accuracy_config = max(result, key=get_accuracy_value)
 
-        print(max_accuracy_config)
 
     elif args.default_train:
         result = default_train_test(
-            parameters=parameters,
+            parameters=test_parameters,
             model=model,
             data_loader=load_tensor,
             calculate_confusion_matrix=calculate_confusion_matrix,
             class_accuracy=class_accuracy,
             class_f1_score=class_f1_score
         )
-        max_accuracy_config = max(result, key=get_accuracy_value)
 
-        print(max_accuracy_config)
 
     elif args.advanced_train:
         result = advanced_train_test(
                     parameters=parameters,
                     model=model,
+                    data_loader=load_tensor,
+                    calculate_confusion_matrix=calculate_confusion_matrix,
+                    class_accuracy=class_accuracy,
+                    class_f1_score=class_f1_score,
+                    get_class_weights=get_class_weights
+                )
+        
+    elif args.advanced_grid_search:
+        result = advanced_grid_search_train_test(
+                    parameters=parameter_configs,
+                    model=model,
+                    grid_search=grid_search,
                     data_loader=load_tensor,
                     calculate_confusion_matrix=calculate_confusion_matrix,
                     class_accuracy=class_accuracy,
