@@ -268,7 +268,7 @@ def train_model_advanced(model, data_loader, loss_function, optimizer, epochs, l
         running_lr.append(optimizer.state_dict()['param_groups'][0]['lr'])      #keep track of the variable learning rates over epochs
 
         losses_over_epochs.append(loss_epoch/246) #store final loss for each document, then average across all documents
-        if loss_epoch/246 < 0.1: # Early Stopping based on Loss
+        if loss_epoch/246 < 0.05: # Early Stopping based on Loss
             break
         
     return np.mean(losses_over_epochs), running_lr, losses_over_epochs, model
