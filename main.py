@@ -115,7 +115,7 @@ def main():
 
     
     if args.grid_search:
-        result = grid_search_train_test(parameter_configs, 
+        result = grid_search_train_test(test_parameter_configs, 
                                         model=model, legal_model=legal_model, grid_search=grid_search, 
                                         data_loader=load_tensor, 
                                         calculate_confusion_matrix=calculate_confusion_matrix, 
@@ -138,7 +138,7 @@ def main():
 
     elif args.advanced_train:
         result = advanced_train_test(
-                    parameters=parameters,
+                    parameters=test_parameters,
                     model=model,
                     legal_model= legal_model,
                     data_loader=load_tensor,
@@ -150,7 +150,7 @@ def main():
         
     elif args.advanced_grid_search:
         result = advanced_grid_search_train_test(
-                    parameters=parameter_configs,
+                    parameters=test_parameter_configs,
                     model=model,
                     legal_model=legal_model,
                     grid_search=grid_search,

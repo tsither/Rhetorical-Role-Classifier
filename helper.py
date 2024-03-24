@@ -208,8 +208,8 @@ def grid_search_train_test(parameters, model, legal_model, grid_search, data_loa
         print("Accuracies Legal BERT: {} \n Average accuracy Legal BERT: {}".format(accuracies_base_legal, average_accuracy_base_legal))
         print("F1 Scores Legal BERT: {} \n Average F1 Legal BERT: {}".format(f1_scores_base_legal, average_f1_base_legal))
 
-        
-    result.append((parameters, (average_accuracy, average_f1)))     #add parameters and metrics to object for each configuration
+    
+    result.append((parameters, ("N/A", "N/A")))     #add parameters and metrics to object for each configuration
         
     return result, confusion_matrix, running_lr, loss_over_epochs, model
 
@@ -439,7 +439,7 @@ def advanced_grid_search_train_test(parameters, model, legal_model, grid_search,
         print("Accuracies Legal BERT: {} \n Average accuracy Legal BERT: {}".format(accuracies_base_legal, average_accuracy_base_legal))
         print("F1 Scores Legal BERT: {} \n Average F1 Legal BERT: {}".format(f1_scores_base_legal, average_f1_base_legal))
         
-    result.append((parameters, (average_accuracy, average_f1)))     #add parameters and metrics to object for each configuration
+    result.append((parameters, ("N/A", "N/A")))     #add parameters and metrics to object for each configuration
         
     return result, confusion_matrix, running_lr, loss_over_epochs, model
 
