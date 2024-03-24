@@ -8,10 +8,10 @@ from tqdm import tqdm
 
 # File includes functions related to training and basic performance evaluation
 
-###########################################################################
+##########################################################################
 
 
-def train_model_default(model, data_loader, loss_function, optimizer, scheduler, epochs, legal_bert=False):
+def train_model_default(model, data_loader, loss_function, optimizer, epochs, legal_bert=False):
     """
     Default training process (WITHOUT variable learning rate, remapping targets, and custom class weight loss)
     (explicit training function, called in larger train_test function)
@@ -25,6 +25,7 @@ def train_model_default(model, data_loader, loss_function, optimizer, scheduler,
     - loss_function
     - optimizer
     - epochs : number of epochs you wish to train on
+    - legal_bert : option to train model on legal bert embeddings, rather than standard bert embeddings
 
 
     Returns:
@@ -37,6 +38,7 @@ def train_model_default(model, data_loader, loss_function, optimizer, scheduler,
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}/{epochs}")
 
+
         #iterate over all documents
         for doc_idx in tqdm(range(246)): 
             if legal_bert:
@@ -46,15 +48,14 @@ def train_model_default(model, data_loader, loss_function, optimizer, scheduler,
                 TRAIN_emb = data_loader(filepath=f"train_document/doc_{doc_idx}/embedding")
                 TRAIN_labels = data_loader(filepath=f"train_document/doc_{doc_idx}/label")
 
-                if TRAIN_emb.size(0) == 0: #ignore any faulty embeddings
-                    continue
-                output = model(TRAIN_emb) #push embeddings through model 
-                loss = loss_function(output, TRAIN_labels) #calculate loss for document
-                
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                scheduler.step()
+            if TRAIN_emb.size(0) == 0: #ignore any faulty embeddings
+                continue
+            output = model(TRAIN_emb) #push embeddings through model 
+            loss = loss_function(output, TRAIN_labels) #calculate loss for document
+            
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
         print(f"Epoch: {epoch+1} | Document: {doc_idx+1}/246 | Loss: {loss.item():.5f}")
         running_lr.append(optimizer.state_dict()['param_groups'][0]['lr'])      #keep track of the variable learning rates over epochs
@@ -77,6 +78,8 @@ def test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, c
     - calculate_confusion_matrix (function): function to build a confusion matrix with the given results
     - class_accuracy (function): function to calculate the accuracy with respect to a single class
     - class_f1_score (function):  function to calculate the f1-score with respect to a single class
+    - legal_bert : option to train model on legal bert embeddings, rather than standard bert embeddings
+
 
     Returns:
     - accuracies (numpy array): accuracies for each individual class
@@ -129,8 +132,7 @@ def default_train_test(parameters, model, legal_model, data_loader, calculate_co
     #define model optimizer and loss function
     model_opt = torch.optim.Adam(model.parameters(), lr= parameters['learning_rate']) #define model optimizer and loss function
     legal_model_opt = torch.optim.Adam(legal_model.parameters(), lr= parameters['learning_rate'])
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_opt, T_max= parameters['epochs'],
-                                                           eta_min= parameters['learning_rate_floor'])
+   
     loss_function = nn.CrossEntropyLoss()
     print("\nWorking with: ")
     print(parameters)
@@ -140,11 +142,12 @@ def default_train_test(parameters, model, legal_model, data_loader, calculate_co
 
 
     print(f'{"Starting Training":-^100}')
-    avg_loss, running_lr, loss_over_epochs, model= train_model_default(model, data_loader, loss_function, model_opt, scheduler, parameters['epochs']) #train model
+    print("Training on standard BERT:")
+
+    avg_loss, running_lr, loss_over_epochs, model= train_model_default(model, data_loader, loss_function, model_opt, parameters['epochs'], legal_bert=False) #train model
 
     #test model
     accuracies, f1_scores, average_accuracy, average_f1, confusion_matrix = test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)
-    print(f'accuracies {type(accuracies)}')
 
     print("Accuracies: {} \n Average accuracy: {}".format(accuracies, average_accuracy))
     print("F1 Scores: {} \n Average F1: {}".format(f1_scores, average_f1))
@@ -196,11 +199,13 @@ def grid_search_train_test(parameters, model, legal_model, grid_search, data_loa
         print(f'{"Starting Training":-^100}')
         epochs = config['epochs']
         
-        avg_loss, running_lr, loss_over_epochs, model = train_model_default(model, data_loader, loss_function, model_opt, epochs)
+        print("Training on standard BERT:")
+        avg_loss, running_lr, loss_over_epochs, model = train_model_default(model, data_loader, loss_function, model_opt, epochs, legal_bert=False)
+        
+        print("\nTraining on  Legal BERT:")
+        avg_loss_legal, running_lr_legal, loss_over_epochs_legal, legal_model = train_model_default(legal_model, data_loader, loss_function, legal_model_opt, epochs, legal_bert=True)
     
-        avg_loss_legal, running_lr_legal, loss_over_epochs_legal, legal_model = train_model_default(legal_model, data_loader, loss_function, legal_model_opt, epochs, True)
-    
-        accuracies_base, f1_scores_base, average_accuracy_base, average_f1_base, confusion_matrix = test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)
+        accuracies_base, f1_scores_base, average_accuracy_base, average_f1_base, confusion_matrix = test_model(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, legal_bert=False)
     
         accuracies_base_legal, f1_scores_base_legal, average_accuracy_base_legal, average_f1_base_legal, confusion_matrix_legal = test_model(legal_model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, legal_bert=True)
 
@@ -232,6 +237,8 @@ def train_model_advanced(model, data_loader, loss_function, optimizer, epochs, l
     - loss_function
     - optimizer
     - epochs : number of epochs you wish to train on
+    - legal_bert : option to train model on legal bert embeddings, rather than standard bert embeddings
+
 
 
     Returns:
@@ -290,6 +297,8 @@ def test_model_advanced(model, data_loader, calculate_confusion_matrix, class_ac
     - calculate_confusion_matrix (function): function to build a confusion matrix with the given results
     - class_accuracy (function): function to calculate the accuracy with respect to a single class
     - class_f1_score (function):  function to calculate the f1-score with respect to a single class
+    - legal_bert : option to train model on legal bert embeddings, rather than standard bert embeddings
+
 
     Returns:
     - accuracies (numpy array): accuracies for each individual class
@@ -357,8 +366,12 @@ def advanced_train_test(parameters, model, legal_model, data_loader, calculate_c
 
     print(f'{"Starting Training":-^100}')
     
+    print("Training on standard BERT:")
+
     avg_loss, running_lr, loss_over_epochs, model = train_model_advanced(model, data_loader, loss_function, model_opt, parameters['epochs'])
-    
+
+    print("Training on Legal BERT:")
+
     avg_loss_legal, running_lr_legal, loss_over_epochs_legal, legal_model = train_model_advanced(legal_model, data_loader, loss_function, legal_model_opt, parameters['epochs'], True)
     
     accuracies_base, f1_scores_base, average_accuracy_base, average_f1_base, confusion_matrix = test_model_advanced(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)
@@ -366,11 +379,12 @@ def advanced_train_test(parameters, model, legal_model, data_loader, calculate_c
     accuracies_base_legal, f1_scores_base_legal, average_accuracy_base_legal, average_f1_base_legal, confusion_matrix_legal = test_model(legal_model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score, legal_bert=True)
 
     
-    print("Accuracies: {} \n Average accuracy: {}".format(accuracies_base, average_accuracy_base))
-    print("F1 Scores: {} \n Average F1: {}".format(f1_scores_base, average_f1_base))
+    print("Accuracies: {} \n\n Average accuracy (standard BERT): {}".format(accuracies_base, average_accuracy_base))
+    print("\nF1 Scores: {} \n Average F1: {}".format(f1_scores_base, average_f1_base))
+
     
-    print("Accuracies Legal BERT: {} \n Average accuracy Legal BERT: {}".format(accuracies_base_legal, average_accuracy_base_legal))
-    print("F1 Scores Legal BERT: {} \n Average F1 Legal BERT: {}".format(f1_scores_base_legal, average_f1_base_legal))
+    print("\nAccuracies Legal BERT: {} \n\n Average accuracy Legal BERT: {}".format(accuracies_base_legal, average_accuracy_base_legal))
+    print("\nF1 Scores Legal BERT: {} \n Average F1 Legal BERT: {}".format(f1_scores_base_legal, average_f1_base_legal))
 
 
     return result, confusion_matrix, running_lr, loss_over_epochs, model
