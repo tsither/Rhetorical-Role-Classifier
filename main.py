@@ -78,7 +78,7 @@ def main():
     #train individual models
     parameters = {
         'epochs': 100,
-        'learning_rate': 1e-4,
+        'learning_rate': 5e-4,
         'learning_rate_floor': 5e-6,
         'dropout': 0.25,
         'hidden_size': 512,

@@ -243,7 +243,7 @@ def train_model_advanced(model, data_loader, loss_function, optimizer, epochs, l
 
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}/{epochs}")
-
+        loss_epoch = 0
 #iterate over all documents
         for doc_idx in tqdm(range(246)): 
                 if legal_bert:
@@ -258,16 +258,19 @@ def train_model_advanced(model, data_loader, loss_function, optimizer, epochs, l
                     continue
                 output = model(TRAIN_emb) #push embeddings through model 
                 loss = loss_function(output, TRAIN_labels) #calculate loss for document
-                
+                loss_epoch += loss.item()
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
                 # scheduler.step()
 
-        print(f"Epoch: {epoch+1} | Document: {doc_idx+1}/246 | Loss: {loss.item():.5f}")
+        print(f"Epoch: {epoch+1} | Document: {doc_idx+1}/246 | Loss: {loss_epoch/246:.5f}")
         running_lr.append(optimizer.state_dict()['param_groups'][0]['lr'])      #keep track of the variable learning rates over epochs
 
-        losses_over_epochs.append(loss.item()) #store final loss for each document, then average across all documents
+        losses_over_epochs.append(loss_epoch/246) #store final loss for each document, then average across all documents
+        if loss_epoch/246 < 0.1: # Early Stopping based on Loss
+            break
+        
     return np.mean(losses_over_epochs), running_lr, losses_over_epochs, model
 
 
