@@ -77,9 +77,9 @@ def main():
 
     #train individual models
     parameters = {
-        'epochs': 50,
-        'learning_rate': 5e-4,
-        'learning_rate_floor': 5e-5,
+        'epochs': 100,
+        'learning_rate': 1e-4,
+        'learning_rate_floor': 5e-6,
         'dropout': 0.25,
         'hidden_size': 512,
         'num_layers': 2
@@ -138,7 +138,7 @@ def main():
 
     elif args.advanced_train:
         result = advanced_train_test(
-                    parameters=test_parameters,
+                    parameters=parameters,
                     model=model,
                     legal_model= legal_model,
                     data_loader=load_tensor,

@@ -217,7 +217,7 @@ def grid_search_train_test(parameters, model, legal_model, grid_search, data_loa
     return result, confusion_matrix, running_lr, loss_over_epochs, model
 
 
-def train_model_advanced(model, data_loader, loss_function, optimizer, scheduler, epochs, legal_bert=False):
+def train_model_advanced(model, data_loader, loss_function, optimizer, epochs, legal_bert=False):
     """
     Option to combine similar labels
 
@@ -262,7 +262,7 @@ def train_model_advanced(model, data_loader, loss_function, optimizer, scheduler
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                scheduler.step()
+                # scheduler.step()
 
         print(f"Epoch: {epoch+1} | Document: {doc_idx+1}/246 | Loss: {loss.item():.5f}")
         running_lr.append(optimizer.state_dict()['param_groups'][0]['lr'])      #keep track of the variable learning rates over epochs
@@ -343,8 +343,8 @@ def advanced_train_test(parameters, model, legal_model, data_loader, calculate_c
     #define model optimizer and loss function
     model_opt = torch.optim.Adam(model.parameters(), lr= parameters['learning_rate']) #define model optimizer and loss function
     legal_model_opt = torch.optim.Adam(legal_model.parameters(), lr= parameters['learning_rate'])
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_opt, T_max= parameters['epochs'],
-                                                           eta_min= parameters['learning_rate_floor'])
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_opt, T_max= parameters['epochs'],
+                                                        #    eta_min= parameters['learning_rate_floor'])
     loss_function = nn.CrossEntropyLoss(weight=class_weights)
     print("\nWorking with: ")
     print(parameters)
@@ -354,9 +354,9 @@ def advanced_train_test(parameters, model, legal_model, data_loader, calculate_c
 
     print(f'{"Starting Training":-^100}')
     
-    avg_loss, running_lr, loss_over_epochs, model = train_model_advanced(model, data_loader, loss_function, model_opt, scheduler, parameters['epochs'])
+    avg_loss, running_lr, loss_over_epochs, model = train_model_advanced(model, data_loader, loss_function, model_opt, parameters['epochs'])
     
-    avg_loss_legal, running_lr_legal, loss_over_epochs_legal, legal_model = train_model_advanced(legal_model, data_loader, loss_function, legal_model_opt, scheduler, parameters['epochs'], True)
+    avg_loss_legal, running_lr_legal, loss_over_epochs_legal, legal_model = train_model_advanced(legal_model, data_loader, loss_function, legal_model_opt, parameters['epochs'], True)
     
     accuracies_base, f1_scores_base, average_accuracy_base, average_f1_base, confusion_matrix = test_model_advanced(model, data_loader, calculate_confusion_matrix, class_accuracy, class_f1_score)
     
