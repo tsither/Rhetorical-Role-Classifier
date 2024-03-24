@@ -52,7 +52,7 @@ def main():
     #organize and process data
 
     train_doc_idxs, train_batched_texts, train_batched_labels = organize_data(train_data, batch_size= 1) 
-    test_doc_idxs, test_batched_texts, test_batched_labels = organize_data(train_data, batch_size= 1) 
+    test_doc_idxs, test_batched_texts, test_batched_labels = organize_data(test_data, batch_size= 1) 
 
     for idx, train_idx in enumerate(train_doc_idxs):
         TRAIN_emb, TRAIN_labels = data_to_embeddings(train_idx, train_batched_texts[idx], train_batched_labels[idx],
@@ -67,7 +67,7 @@ def main():
         save_tensor(legal_train_emb, 'train_document/doc_'+str(idx)+"_legal","embedding")
         save_tensor(legal_train_labels, 'train_document/doc_'+str(idx)+"_legal","label")
 
-    #####CURRENTLY ADAPTING FOR DIFFERENT PREPROCESSING FEATURES
+
     for idx, test_idx in enumerate(test_doc_idxs):
         TEST_emb, TEST_labels = data_to_embeddings(test_idx, test_batched_texts[idx], test_batched_labels[idx],
                                                 label_encoder,max_length_dict_TEST, tokenizer=tokenizer,
