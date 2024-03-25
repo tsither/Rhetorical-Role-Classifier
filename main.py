@@ -81,8 +81,8 @@ def main():
         'learning_rate': 5e-4,
         'learning_rate_floor': 5e-6,
         'dropout': 0.25,
-        'hidden_size': 512,
-        'num_layers': 1
+        'hidden_size': 256,
+        'num_layers': 2
         }
 
     #For testing functionality:
@@ -97,7 +97,7 @@ def main():
 
     # For grid search training
     parameter_configs = {
-        'epochs': [10,20],
+        'epochs': [100,150],
         'learning_rate': [0.0001, 0.001],
         'dropout': [0.0, 0.1, 0.2],
         'hidden_size': [128, 256],
@@ -115,7 +115,7 @@ def main():
 
     
     if args.grid_search:
-        result = grid_search_train_test(test_parameter_configs, 
+        result = grid_search_train_test(parameter_configs, 
                                         model=model, legal_model=legal_model, grid_search=grid_search, 
                                         data_loader=load_tensor, 
                                         calculate_confusion_matrix=calculate_confusion_matrix, 
@@ -126,7 +126,7 @@ def main():
 
     elif args.default_train:
         result = default_train_test(
-            parameters=test_parameters,
+            parameters=parameters,
             model=model,
             legal_model=legal_model,
             data_loader=load_tensor,
@@ -150,7 +150,7 @@ def main():
         
     elif args.advanced_grid_search:
         result = advanced_grid_search_train_test(
-                    parameters=test_parameter_configs,
+                    parameters=parameter_configs,
                     model=model,
                     legal_model=legal_model,
                     grid_search=grid_search,
@@ -171,4 +171,4 @@ def main():
 if __name__ == "__main__":
     start_time = time.time()
     main()
-    print("--- %s seconds ---" % (time.time() - start_time))
+    print("\n--- %s seconds ---" % (time.time() - start_time))
