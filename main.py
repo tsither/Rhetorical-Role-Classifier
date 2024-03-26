@@ -81,8 +81,8 @@ def main():
         'learning_rate': 5e-4,
         'learning_rate_floor': 5e-6,
         'dropout': 0.25,
-        'hidden_size': 256,
-        'num_layers': 2
+        'hidden_size': 512,
+        'num_layers': 1
         }
 
     #For testing functionality:
