@@ -84,6 +84,15 @@ def main():
         'hidden_size': 512,
         'num_layers': 1
         }
+    
+    # For grid search training
+    parameter_configs = {
+        'epochs': [100,150],
+        'learning_rate': [0.0001, 0.001],
+        'dropout': [0.0, 0.1, 0.2],
+        'hidden_size': [128, 256],
+        'num_layers': [1, 2]
+        }
 
     #For testing functionality:
     test_parameters = {
@@ -95,15 +104,6 @@ def main():
     }
 
 
-    # For grid search training
-    parameter_configs = {
-        'epochs': [100,150],
-        'learning_rate': [0.0001, 0.001],
-        'dropout': [0.0, 0.1, 0.2],
-        'hidden_size': [128, 256],
-        'num_layers': [1, 2]
-        }
-    
     #testing grid search functionality
     test_parameter_configs = {
         'epochs': [1,2],
@@ -125,7 +125,7 @@ def main():
 
 
     elif args.default_train:
-        result = default_train_test(
+        result, confusion_matrix, running_lr, loss_over_epochs, model_ = default_train_test(
             parameters=parameters,
             model=model,
             legal_model=legal_model,

@@ -35,22 +35,29 @@ def main():
     label_encoder = label_encode(list_of_targets)
 
 
-    #Compute the maximum sentence length for each document in the training and test data (to ensure all embeddings will be the same size within a document)
+    # Compute the maximum sentence length for each document in the training and test data (to ensure all embeddings will be the same size within a document)
     max_length_dict_TRAIN = document_max_length(train_data, tokenizer=tokenizer)
     max_length_dict_TEST = document_max_length(test_data, tokenizer=tokenizer)
 
-    # # To same time during training process, write these documents to json file
+    max_length_dict_TRAIN = document_max_length(train_data, tokenizer=legal_tokenizer)
+    max_length_dict_TEST = document_max_length(test_data, tokenizer=legal_tokenizer)
+
+    # To same time during training process, write these documents to json file
     write_dictionary_to_json(max_length_dict_TRAIN, 'max_length_dicts/max_length_train.json')
     write_dictionary_to_json(max_length_dict_TEST, 'max_length_dicts/max_length_test.json')
 
+    write_dictionary_to_json(max_length_dict_TRAIN, 'max_length_dicts/max_length_train_legal.json')
+    write_dictionary_to_json(max_length_dict_TEST, 'max_length_dicts/max_length_test_legal.json')
 
-    #retrieve max_length dictionaries to compute word embeddings
+
+    # retrieve max_length dictionaries to compute word embeddings
     max_length_dict_TRAIN = read_json('max_length_dicts/max_length_train.json', reading_max_length=True)
     max_length_dict_TEST = read_json('max_length_dicts/max_length_test.json', reading_max_length=True)
 
+    max_length_dict_TRAIN = read_json('max_length_dicts/max_length_train_legal.json', reading_max_length=True)
+    max_length_dict_TEST = read_json('max_length_dicts/max_length_test_legal.json', reading_max_length=True)
 
     #organize and process data
-
     train_doc_idxs, train_batched_texts, train_batched_labels = organize_data(train_data, batch_size= 1) 
     test_doc_idxs, test_batched_texts, test_batched_labels = organize_data(test_data, batch_size= 1) 
 
