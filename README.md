@@ -115,6 +115,8 @@ legaleval-subtask-a-main % python emb_label_generation.py
 
 ## Appendix
 
+Dependencies required to run this project can be found in 'requirements.txt'
+
 Rhetorical roles (RRs): 
 - Preamble (PREAMBLE)
 - Facts (FAC)
