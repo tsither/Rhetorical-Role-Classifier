@@ -27,7 +27,8 @@ a dict with the following keys:
 
 ## 3. Training the model 
 
-Training (and evaluating) the various models in this project can be done via the following flags on your terminal (assuming you are in the projects directory)
+Training (and evaluating) the various models in this project can be done via the following flags on your terminal (assuming you are in the projects directory). Dependencies required to run this project can be found in 'requirements.txt'.
+
 
 ### 3.1 Model flags
 Choose one of the following flags to denote model architecture:
@@ -114,8 +115,6 @@ legaleval-subtask-a-main % python emb_label_generation.py
 ```
 
 ## Appendix
-
-Dependencies required to run this project can be found in 'requirements.txt'
 
 Rhetorical roles (RRs): 
 - Preamble (PREAMBLE)
